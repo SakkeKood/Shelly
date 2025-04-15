@@ -6,7 +6,7 @@ let Region = "FI"; // Supported regions: DK1, DK2, EE, FI, LT, LV, NO1, NO2, NO3
 // Boiler relay control settings (using Switch Add-On)
 let SETTINGS_BOILER = {
     RelayIsInUse: true,  // Activate rule for Relay 1
-    Relays: [0], // Relay 1 connected via Switch Add-On (Boiler)
+    RelaysId: [100], // Relay 100 connected via Switch Add-On (Boiler)
     RelayName: "Boiler",  // Name for this relay/rule
     Inverted: false, // Inverted relay logic (change if required)
     
@@ -39,8 +39,18 @@ if (SETTINGS_BOILER.RelayIsInUse === false) {
 let currentHour = -1; 
 
 Timer.set(30000, true, function () {
-    if (currentHour !== new Date().getHours()) {
-        currentHour = new Date().getHours();
+    let newHour;
+    try {
+        newHour = new Date().getHours();
+    } catch (e) {
+        print("Boiler Control: Error getting current time. Turning relay ON as a failsafe.");
+        SetRelayStatusInShelly(SETTINGS_BOILER, SETTINGS_BOILER.InvertedOn);
+        SETTINGS_BOILER.RelayExecuted = true;
+        return;
+    }
+    
+    if (currentHour !== newHour) {
+        currentHour = newHour;
         if (SETTINGS_BOILER.RelayIsInUse === true) { SETTINGS_BOILER.RelayExecuted = false } else { SETTINGS_BOILER.RelayExecuted = true; };
     }
 
@@ -88,9 +98,9 @@ function SetRelayStatusInShelly(Settings, newStatus) {
         return; 
     }
 
-    for (let i = 0; i < Settings.Relays.length; i++) {
-        print("Boiler Control: Changing relay status. Id: " + Settings.Relays[i] + " - New relay status: " + newStatus);
-        Shelly.call("Switch.Set", "{ id:" + Settings.Relays[i] + ", on:" + newStatus + "}", null, null);
+    for (let i = 0; i < Settings.RelaysId.length; i++) {
+        print("Boiler Control: Changing relay status. Id: " + Settings.RelaysId[i] + " - New relay status: " + newStatus);
+        Shelly.call("Switch.Set", { id: Settings.RelaysId[i], on: newStatus }, null, null);
     }
 
     SETTINGS_BOILER.RelayStatus = newStatus; 
