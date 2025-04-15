@@ -38,7 +38,8 @@ if (SETTINGS_BOILER.RelayIsInUse === false) {
 
 let currentHour = -1; 
 
-Timer.set(30000, true, function () {
+// Check every 15 minutes instead of every 30 seconds
+Timer.set(900000, true, function () {
     let newHour;
     try {
         newHour = new Date().getHours();
